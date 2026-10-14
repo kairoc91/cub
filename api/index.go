@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"path"
+	"runtime/debug"
 	"strings"
 	"sync"
 
@@ -22,20 +25,20 @@ var (
 func initialize() {
 	repo, err := cubRepo.NewRepositoryFromReader(strings.NewReader(appAssets.CUBHistoricoCSV))
 	if err != nil {
-		initErr = err
+		initErr = fmt.Errorf("falha ao carregar cub_historico: %w", err)
 		return
 	}
 
 	calc := calculator.NewCalculator(repo)
 	store, err := storage.NewStorage("") // Modo resiliente/em memória para serverless
 	if err != nil {
-		initErr = err
+		initErr = fmt.Errorf("falha ao inicializar storage: %w", err)
 		return
 	}
 
 	srvHandler, err := handlers.NewServer(repo, calc, store, "static")
 	if err != nil {
-		initErr = err
+		initErr = fmt.Errorf("falha ao inicializar server handlers: %w", err)
 		return
 	}
 
@@ -46,14 +49,22 @@ func initialize() {
 
 // Handler é o ponto de entrada executado pelo runtime serverless do Vercel
 func Handler(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			log.Printf("[PANIC Vercel Handler] %v\nStack:\n%s", rec, debug.Stack())
+			http.Error(w, fmt.Sprintf("Erro interno no simulador CUB: %v", rec), http.StatusInternalServerError)
+		}
+	}()
+
 	initOnce.Do(initialize)
 
 	if initErr != nil {
+		log.Printf("[INIT ERROR Vercel Handler]: %v", initErr)
 		http.Error(w, "Erro ao inicializar simulador CUB: "+initErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// 1. Tenta recuperar o path original passado pelo rewrite do vercel.json
+	// 1. Tenta recuperar o path original passado pelo rewrite do vercel.json ou cabeçalho
 	reqPath := r.URL.Query().Get("__path")
 	if reqPath == "" {
 		reqPath = r.Header.Get("x-matched-path")

@@ -42,28 +42,26 @@ func NewServer(repo *cub.Repository, calc *calculator.Calculator, store *storage
 }
 
 func loadTemplates() (*template.Template, error) {
+	// 1. Sempre prioriza os templates embutidos (100% determinístico, isolado e resiliente na Vercel/produção)
+	if tmpl, err := template.ParseFS(appAssets.TemplatesFS, "templates/*.html", "templates/partials/*.html"); err == nil {
+		return tmpl, nil
+	}
+
+	// 2. Fallback para sistema de arquivos local
 	baseDirs := []string{"templates", "../../templates", "../templates"}
-	selectedDir := ""
 	for _, dir := range baseDirs {
 		if _, err := os.Stat(dir); err == nil {
-			selectedDir = dir
-			break
-		}
-	}
-	if selectedDir != "" {
-		tmpl := template.New("base")
-		var err error
-		tmpl, err = tmpl.ParseGlob(selectedDir + "/*.html")
-		if err == nil {
-			partialsDir := selectedDir + "/partials"
-			if _, errStat := os.Stat(partialsDir); errStat == nil {
-				_, _ = tmpl.ParseGlob(partialsDir + "/*.html")
+			tmpl := template.New("base")
+			if t, errGlob := tmpl.ParseGlob(dir + "/*.html"); errGlob == nil {
+				partialsDir := dir + "/partials"
+				if _, errStat := os.Stat(partialsDir); errStat == nil {
+					_, _ = t.ParseGlob(partialsDir + "/*.html")
+				}
+				return t, nil
 			}
-			return tmpl, nil
 		}
 	}
 
-	// Fallback para templates embutidos (Vercel Serverless / produção isolada)
 	return template.ParseFS(appAssets.TemplatesFS, "templates/*.html", "templates/partials/*.html")
 }
 
@@ -71,10 +69,10 @@ func loadTemplates() (*template.Template, error) {
 func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	// Arquivos estáticos (CSS, JS) com fallback para filesystem embutido
 	var staticFS http.FileSystem
-	if _, err := os.Stat(s.staticPath); err == nil {
-		staticFS = http.Dir(s.staticPath)
-	} else if sub, err := fs.Sub(appAssets.StaticFS, "static"); err == nil {
+	if sub, err := fs.Sub(appAssets.StaticFS, "static"); err == nil {
 		staticFS = http.FS(sub)
+	} else if _, err := os.Stat(s.staticPath); err == nil {
+		staticFS = http.Dir(s.staticPath)
 	} else {
 		staticFS = http.FS(appAssets.StaticFS)
 	}
