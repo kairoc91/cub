@@ -19,24 +19,35 @@ type Storage struct {
 	items    []models.PropostaSalva
 }
 
-// NewStorage inicializa o armazenamento baseado em arquivo JSON local
+// NewStorage inicializa o armazenamento baseado em arquivo JSON local ou memória
 func NewStorage(filePath string) (*Storage, error) {
-	dir := filepath.Dir(filePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, fmt.Errorf("falha ao criar diretório de dados (%s): %w", dir, err)
-	}
-
 	s := &Storage{
 		filePath: filePath,
 		items:    make([]models.PropostaSalva, 0),
 	}
 
-	if _, err := os.Stat(filePath); err == nil {
-		data, err := os.ReadFile(filePath)
-		if err == nil && len(data) > 0 {
-			var loaded []models.PropostaSalva
-			if err := json.Unmarshal(data, &loaded); err == nil {
-				s.items = loaded
+	if filePath != "" {
+		dir := filepath.Dir(filePath)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			// Em ambientes serverless (Vercel / AWS Lambda), o diretório pode ser read-only.
+			// Tenta salvar em /tmp ou recorre a modo em memória.
+			tmpFile := filepath.Join(os.TempDir(), filepath.Base(filePath))
+			if errTmp := os.MkdirAll(filepath.Dir(tmpFile), 0755); errTmp == nil {
+				s.filePath = tmpFile
+			} else {
+				s.filePath = ""
+			}
+		}
+	}
+
+	if s.filePath != "" {
+		if _, err := os.Stat(s.filePath); err == nil {
+			data, err := os.ReadFile(s.filePath)
+			if err == nil && len(data) > 0 {
+				var loaded []models.PropostaSalva
+				if err := json.Unmarshal(data, &loaded); err == nil {
+					s.items = loaded
+				}
 			}
 		}
 	}
@@ -120,6 +131,10 @@ func (s *Storage) ClearAll() error {
 }
 
 func (s *Storage) saveToFileLocked() error {
+	if s.filePath == "" {
+		return nil
+	}
+
 	data, err := json.MarshalIndent(s.items, "", "  ")
 	if err != nil {
 		return fmt.Errorf("erro ao serializar propostas: %w", err)
@@ -128,11 +143,12 @@ func (s *Storage) saveToFileLocked() error {
 	// Escrita atômica via arquivo temporário para evitar corrupção em falhas elétricas/processos
 	tmpFile := s.filePath + ".tmp"
 	if err := os.WriteFile(tmpFile, data, 0644); err != nil {
-		return fmt.Errorf("erro ao gravar arquivo temporário de propostas: %w", err)
+		// Se não for possível persistir no disco do container/serverless, mantém em memória
+		return nil
 	}
 
 	if err := os.Rename(tmpFile, s.filePath); err != nil {
-		return fmt.Errorf("erro ao atualizar arquivo de propostas: %w", err)
+		return nil
 	}
 
 	return nil

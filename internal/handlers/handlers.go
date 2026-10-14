@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"html/template"
+	"io/fs"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	appAssets "cub"
 	"cub/internal/calculator"
 	"cub/internal/cub"
 	"cub/internal/models"
@@ -40,7 +42,7 @@ func NewServer(repo *cub.Repository, calc *calculator.Calculator, store *storage
 }
 
 func loadTemplates() (*template.Template, error) {
-	baseDirs := []string{"templates", "../../templates"}
+	baseDirs := []string{"templates", "../../templates", "../templates"}
 	selectedDir := ""
 	for _, dir := range baseDirs {
 		if _, err := os.Stat(dir); err == nil {
@@ -48,33 +50,35 @@ func loadTemplates() (*template.Template, error) {
 			break
 		}
 	}
-	if selectedDir == "" {
-		selectedDir = "templates"
-	}
-
-	tmpl := template.New("base")
-	var err error
-	tmpl, err = tmpl.ParseGlob(selectedDir + "/*.html")
-	if err != nil {
-		return nil, err
-	}
-
-	partialsDir := selectedDir + "/partials"
-	if _, errStat := os.Stat(partialsDir); errStat == nil {
-		tmpl, err = tmpl.ParseGlob(partialsDir + "/*.html")
-		if err != nil {
-			return nil, err
+	if selectedDir != "" {
+		tmpl := template.New("base")
+		var err error
+		tmpl, err = tmpl.ParseGlob(selectedDir + "/*.html")
+		if err == nil {
+			partialsDir := selectedDir + "/partials"
+			if _, errStat := os.Stat(partialsDir); errStat == nil {
+				_, _ = tmpl.ParseGlob(partialsDir + "/*.html")
+			}
+			return tmpl, nil
 		}
 	}
 
-	return tmpl, nil
+	// Fallback para templates embutidos (Vercel Serverless / produção isolada)
+	return template.ParseFS(appAssets.TemplatesFS, "templates/*.html", "templates/partials/*.html")
 }
 
 // RegisterRoutes binds all application endpoints to the mux
 func (s *Server) RegisterRoutes(mux *http.ServeMux) {
-	// Arquivos estáticos (CSS, JS)
-	fileServer := http.FileServer(http.Dir(s.staticPath))
-	mux.Handle("/static/", http.StripPrefix("/static/", fileServer))
+	// Arquivos estáticos (CSS, JS) com fallback para filesystem embutido
+	var staticFS http.FileSystem
+	if _, err := os.Stat(s.staticPath); err == nil {
+		staticFS = http.Dir(s.staticPath)
+	} else if sub, err := fs.Sub(appAssets.StaticFS, "static"); err == nil {
+		staticFS = http.FS(sub)
+	} else {
+		staticFS = http.FS(appAssets.StaticFS)
+	}
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(staticFS)))
 
 	// Rota Principal (SSR)
 	mux.HandleFunc("GET /{$}", s.handleIndex)

@@ -8,11 +8,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
+	appAssets "cub"
 	"cub/internal/calculator"
-	"cub/internal/cub"
+	cubRepo "cub/internal/cub"
 	"cub/internal/handlers"
 	"cub/internal/storage"
 )
@@ -26,9 +28,15 @@ func main() {
 
 	log.Println("🚀 Iniciando Simulador CUB (Go + HTMX + Tailwind v4)...")
 
-	// 1. Repositório CUB
+	// 1. Repositório CUB (disco ou embutido)
 	inicioCUB := time.Now()
-	repo, err := cub.NewRepositoryFromFile(*csvPath)
+	var repo *cubRepo.Repository
+	var err error
+	if _, errStat := os.Stat(*csvPath); errStat == nil {
+		repo, err = cubRepo.NewRepositoryFromFile(*csvPath)
+	} else {
+		repo, err = cubRepo.NewRepositoryFromReader(strings.NewReader(appAssets.CUBHistoricoCSV))
+	}
 	if err != nil {
 		log.Fatalf("❌ Falha crítica ao carregar CUB histórico: %v", err)
 	}
