@@ -1,0 +1,55 @@
+@import "tailwindcss";
+@source "../templates";
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.whitespace-nowrap {
+  white-space: nowrap !important;
+}
+
+/* ==========================================================================
+   Design Tokens & Base Styles: Fundo Branco com Acentos em Azul e Rosa
+   ========================================================================== */
+body {
+  background-color: #ffffff;
+  background-image: 
+    radial-gradient(circle at 10% 12%, rgba(59, 130, 246, 0.07) 0%, transparent 45%),
+    radial-gradient(circle at 90% 15%, rgba(244, 63, 94, 0.07) 0%, transparent 45%),
+    radial-gradient(circle at 50% 85%, rgba(99, 102, 241, 0.05) 0%, transparent 55%);
+  background-attachment: fixed;
+  color: #0f172a;
+  font-family: var(--font-sans);
+}
+
+/* Cards e Superfícies Clean Brancos */
+.white-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+}
+
+.white-card-hover:hover {
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 12px 32px -4px rgba(37, 99, 235, 0.08), 0 4px 14px -2px rgba(244, 63, 94, 0.06);
+}
+
+.white-input {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+}
+
+.white-input:focus {
+  border-color: #2563eb;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Grid sutil para background claro */
+.bg-grid-soft {
+  background-image: radial-gradient(rgba(148, 163, 184, 0.2) 1px, transparent 1px);
+  background-size: 24px 24px;
+}

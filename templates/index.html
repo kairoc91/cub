@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Especificação técnica e guia passo a passo da equivalência do CUB em parcelas imobiliárias para desenvolvedores Node.js.">
+  <title>Equivalência CUB • Guia Técnico para Desenvolvedores Node.js</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="/static/js/htmx.min.js"></script>
+</head>
+<body class="bg-white text-slate-800 font-sans min-h-screen antialiased selection:bg-rose-500 selection:text-white">
+
+  <!-- Container Principal (Fundo Branco com Acentos em Azul e Rosa) -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-12 space-y-16">
+
+    <!-- HERO SECTION -->
+    <section class="space-y-6 max-w-4xl">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-200 bg-blue-50 text-[11px] font-mono text-blue-700">
+        <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+        <span class="font-semibold">DOCUMENTO TÉCNICO INTERNO • EQUIPE DE DESENVOLVIMENTO NODE.JS</span>
+      </div>
+
+      <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight font-sans">
+        Como funciona a <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-rose-500">equivalência do CUB</span> para parcelas
+      </h1>
+
+      <p class="text-sm sm:text-base text-slate-600 leading-relaxed font-sans">
+        No mercado imobiliário em fase de obras (venda na planta), as parcelas <strong class="text-slate-900">não sofrem juros compostos bancários (PRICE/SAC)</strong>. Em vez disso, a dívida é convertida para uma <strong class="text-blue-600">moeda teórica da construção civil: o CUB</strong>. Este documento orienta a implementação dessa regra de negócio no backend <strong class="text-rose-600">Node.js (TypeScript / JavaScript)</strong> com precisão matemática.
+      </p>
+
+      <!-- 3 Regras de Ouro para Desenvolvedores -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+        <div class="p-5 rounded-2xl bg-white border border-slate-200 space-y-1.5 shadow-md shadow-slate-100 hover:border-blue-300 transition-all">
+          <div class="text-[11px] font-mono text-blue-600 uppercase font-bold">Princípio 01</div>
+          <div class="text-sm font-bold text-slate-900 font-mono">CUB-Base é Imutável</div>
+          <p class="text-xs text-slate-500 font-sans">O CUB do mês da assinatura é gravado no banco de dados e nunca muda até o término da obra.</p>
+        </div>
+        <div class="p-5 rounded-2xl bg-white border border-slate-200 space-y-1.5 shadow-md shadow-slate-100 hover:border-rose-300 transition-all">
+          <div class="text-[11px] font-mono text-rose-600 uppercase font-bold">Princípio 02</div>
+          <div class="text-sm font-bold text-slate-900 font-mono">Dívida em Cotas CUB</div>
+          <p class="text-xs text-slate-500 font-sans">O modelo no PostgreSQL/MongoDB deve persistir a quantidade de CUBs de cada parcela (4 casas decimais).</p>
+        </div>
+        <div class="p-5 rounded-2xl bg-white border border-slate-200 space-y-1.5 shadow-md shadow-slate-100 hover:border-indigo-300 transition-all">
+          <div class="text-[11px] font-mono text-indigo-600 uppercase font-bold">Princípio 03</div>
+          <div class="text-sm font-bold text-slate-900 font-mono">Reajuste no Vencimento</div>
+          <p class="text-xs text-slate-500 font-sans">No mês de faturamento da cobrança, multiplica-se a cota fixa pelo CUB homologado daquele mês.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 01. O EXEMPLO CENTRAL (R$ 550.000 / AGOSTO DE 2023) -->
+    <section id="exemplo-central" class="p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-xl shadow-slate-200/50 space-y-6">
+      <div class="border-b border-slate-100 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-widest text-blue-600 font-semibold">01. O Exemplo Fundamental</span>
+          <h2 class="text-2xl font-bold font-mono text-slate-900 mt-1">Imóvel de R$ 550.000,00 ÷ CUB de Agosto/2023</h2>
+        </div>
+        <div class="px-3.5 py-1 rounded-full border border-rose-200 bg-rose-50 text-xs font-mono text-rose-700 font-semibold">
+          CUB Ago/2023 = <strong class="text-rose-900">R$ 2.750,52</strong>
+        </div>
+      </div>
+
+      <!-- Equação Visual em Destaque Azul & Rosa -->
+      <div class="p-6 rounded-2xl bg-gradient-to-br from-blue-50/80 via-indigo-50/50 to-rose-50/80 border border-blue-200/80 text-center sm:text-left space-y-4">
+        <div class="text-xs font-mono text-slate-500 uppercase tracking-wider font-semibold">A Fórmula da Equivalência</div>
+        <div class="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 font-mono text-lg sm:text-2xl text-slate-900">
+          <div class="flex flex-col items-center">
+            <span class="text-slate-700 font-semibold">Valor em Reais (R$)</span>
+            <span class="w-full h-px bg-slate-300 my-1"></span>
+            <span class="text-slate-500 font-normal">CUB-Base Contratual</span>
+          </div>
+          <span class="text-rose-500 text-xl font-bold">=</span>
+          <div class="flex flex-col items-center">
+            <span class="text-blue-700 font-bold">R$ 550.000,00</span>
+            <span class="w-full h-px bg-blue-300 my-1"></span>
+            <span class="text-blue-700 font-bold">R$ 2.750,52</span>
+          </div>
+          <span class="text-rose-500 text-xl font-bold">=</span>
+          <div class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-rose-500 border border-rose-300 text-white font-black text-xl sm:text-3xl shadow-lg shadow-rose-500/20">
+            199,9622 CUBs
+          </div>
+        </div>
+      </div>
+
+      <!-- Explicação do Impacto no Tempo -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+        <div class="space-y-3 text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
+          <h3 class="font-mono font-bold text-slate-900 text-sm uppercase tracking-wider">O que este número significa na API Node.js?</h3>
+          <p>
+            No momento em que a proposta é fechada em <strong class="text-slate-900 font-mono">Agosto de 2023</strong>, o cliente não comprou "R$ 550.000,00 em moeda corrente". Ele assumiu um compromisso indexado de entregar exatamente <strong class="text-blue-700 font-mono">199,9622 CUBs</strong> à incorporadora.
+          </p>
+          <p>
+            Na construção civil, os custos de concreto, ferro, mão de obra e insumos sobem ao longo dos anos. Se o empreendimento levar 36 meses para ser entregue, o saldo em cotas CUB preserva o poder de compra da obra contra a inflação setorial.
+          </p>
+        </div>
+
+        <!-- Comparação Temporal Real (Ago/2023 vs Atual) -->
+        <div class="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-3 font-mono text-xs shadow-sm">
+          <div class="text-slate-500 uppercase tracking-widest text-[11px] pb-2 border-b border-slate-200 font-semibold">
+            Evolução Temporal • Impacto no Saldo Devedor
+          </div>
+          <div class="flex justify-between py-1">
+            <span class="text-slate-600">Na Assinatura (08/2023):</span>
+            <span class="text-slate-900 font-bold">199,9622 × R$ 2.750,52 = R$ 550.000,00</span>
+          </div>
+          <div class="flex justify-between py-1 border-t border-slate-200/60">
+            <span class="text-slate-600">Hoje (CUB 10/2026 @ R$ 3.171,96):</span>
+            <span class="text-slate-900 font-bold">199,9622 × R$ 3.171,96 = R$ 634.272,00</span>
+          </div>
+          <div class="flex justify-between py-1.5 border-t border-slate-200 text-slate-700">
+            <span>Variação Total Acumulada:</span>
+            <span class="text-rose-600 font-extrabold">+ R$ 84.272,00 (+15,32%)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02. PIPELINE DE CÁLCULO PARA O DESENVOLVEDOR NODE.JS (PASSO A PASSO) -->
+    <section id="pipeline-dev" class="space-y-8">
+      <div class="border-b border-slate-200 pb-4">
+        <span class="text-xs font-mono uppercase tracking-widest text-blue-600 font-semibold">02. Arquitetura da Solução</span>
+        <h2 class="text-2xl font-bold font-mono text-slate-900 mt-1">O Algoritmo em 4 Passos no Node.js</h2>
+        <p class="text-xs text-slate-500 mt-1">Como estruturar os serviços, schemas (Prisma/TypeORM/Mongoose) e endpoints.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Passo 1 -->
+        <div class="p-6 rounded-2xl bg-white border border-slate-200 space-y-3 shadow-md shadow-slate-100 hover:border-blue-300 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono px-3 py-0.5 rounded-full bg-blue-600 text-white font-bold">PASSO 01</span>
+            <span class="text-[11px] font-mono text-slate-500">Na Criação do Contrato</span>
+          </div>
+          <h3 class="text-base font-bold font-mono text-slate-900">Congelamento do CUB-Base</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Ao salvar o contrato via API Node.js, busca-se o índice do mês acordado (ex: <code class="text-blue-700 bg-blue-50 px-1 py-0.5 rounded border border-blue-200 font-semibold">08/2023 -> 2750.52</code>) e congela-se no registro.
+          </p>
+          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 font-mono text-[11px] text-slate-200 space-y-1">
+            <div class="text-blue-400">// Objeto salvo no banco (ex: Prisma / Postgres):</div>
+            <div>const contrato = {</div>
+            <div>&nbsp;&nbsp;valorNominalReais: <span class="text-white font-bold">550000.00</span>,</div>
+            <div>&nbsp;&nbsp;cubBaseAnoMes: <span class="text-rose-400">"2023-08"</span>,</div>
+            <div>&nbsp;&nbsp;cubBaseValor: <span class="text-sky-300 font-bold">2750.5200</span>,</div>
+            <div>&nbsp;&nbsp;totalCotasCUB: <span class="text-emerald-400 font-bold">199.9622</span></div>
+            <div>};</div>
+          </div>
+        </div>
+
+        <!-- Passo 2 -->
+        <div class="p-6 rounded-2xl bg-white border border-slate-200 space-y-3 shadow-md shadow-slate-100 hover:border-rose-300 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono px-3 py-0.5 rounded-full bg-rose-500 text-white font-bold">PASSO 02</span>
+            <span class="text-[11px] font-mono text-slate-500">Desdobramento de Parcelas</span>
+          </div>
+          <h3 class="text-base font-bold font-mono text-slate-900">Decomposição em Cotas Fixas</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Cada evento do cronograma (sinal, entrada, mensais, chaves) recebe sua fração de CUB: <code class="text-rose-600 font-semibold">cota = valor / cubBase</code>.
+          </p>
+          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 font-mono text-[11px] text-slate-200 space-y-1">
+            <div class="text-rose-400">// Cotas fixadas das parcelas de R$ 550.000:</div>
+            <div>• Sinal (10%): 55.000 / 2750.52 = <span class="text-white font-bold">19.9962 CUBs</span></div>
+            <div>• Entrada (20%): 110.000 / 2750.52 = <span class="text-white font-bold">39.9924 CUBs</span></div>
+            <div>• 24x Mensais: 13.750 / 2750.52 = <span class="text-white font-bold">4.9991 CUBs cada</span></div>
+            <div>• Chaves (10%): 55.000 / 2750.52 = <span class="text-white font-bold">19.9962 CUBs</span></div>
+          </div>
+        </div>
+
+        <!-- Passo 3 -->
+        <div class="p-6 rounded-2xl bg-white border border-slate-200 space-y-3 shadow-md shadow-slate-100 hover:border-indigo-300 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono px-3 py-0.5 rounded-full bg-indigo-600 text-white font-bold">PASSO 03</span>
+            <span class="text-[11px] font-mono text-slate-500">Rotina Agendada</span>
+          </div>
+          <h3 class="text-base font-bold font-mono text-slate-900">Cron de Ingestão Sinduscon</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            No início de cada mês, um job no Node.js (`node-cron` ou fila BullMQ) ingere o CUB recém-publicado e grava na tabela de série temporal.
+          </p>
+          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 font-mono text-[11px] text-slate-200 space-y-1">
+            <div class="text-indigo-400">// Tabela temporal `cub_historico`:</div>
+            <div>{ anoMes: "2023-08", valor: 2750.5200 }</div>
+            <div>{ anoMes: "2023-09", valor: 2756.1400 }</div>
+            <div>...</div>
+            <div>{ anoMes: "2026-10", valor: 3171.9600 }</div>
+          </div>
+        </div>
+
+        <!-- Passo 4 -->
+        <div class="p-6 rounded-2xl bg-white border border-slate-200 space-y-3 shadow-md shadow-slate-100 hover:border-pink-300 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono px-3 py-0.5 rounded-full bg-pink-600 text-white font-bold">PASSO 04</span>
+            <span class="text-[11px] font-mono text-slate-500">Faturamento da Parcela</span>
+          </div>
+          <h3 class="text-base font-bold font-mono text-slate-900">Emissão do Boleto / PIX</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            No mês do vencimento, o gateway de pagamento calcula: <code class="text-pink-600 font-semibold">valorFinal = cotaCUB * cubVigente</code>.
+          </p>
+          <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 font-mono text-[11px] text-slate-200 space-y-1">
+            <div class="text-pink-400">// Cálculo executado no checkout/gerador de boleto:</div>
+            <div class="text-white font-bold">valorBoleto = cotaParcela * cubMesVigente;</div>
+            <div>Ex: 4.9991 CUBs * R$ 3.171,96 (10/2026)</div>
+            <div>= <span class="text-rose-400 font-bold underline">R$ 15.856,94</span> (em vez de R$ 13.750,00)</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 03. ESPECIFICAÇÃO EM CÓDIGO NODE.JS (TYPESCRIPT / ES MODULES) -->
+    <section id="especificacao-node" class="space-y-4">
+      <div class="border-b border-slate-200 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-widest text-rose-600 font-semibold">03. Implementação Canônica</span>
+          <h2 class="text-2xl font-bold font-mono text-slate-900 mt-1">Módulo de Domínio em Node.js</h2>
+          <p class="text-xs text-slate-500 mt-1">Código limpo e modular pronto para produção (Express, Fastify, NestJS ou Lambdas).</p>
+        </div>
+        <span class="px-3 py-1 rounded-full border border-blue-200 bg-blue-50 text-xs font-mono text-blue-700 font-semibold">
+          Node.js 20+ / ESM & TS
+        </span>
+      </div>
+
+      <!-- Code Box Node.js -->
+      <div class="rounded-2xl bg-slate-950 border border-slate-800 p-6 font-mono text-xs overflow-x-auto text-slate-200 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800 text-slate-300">
+          <span class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+            <strong class="text-white">src/services/cubService.ts</strong> (ou .js)
+          </span>
+          <span class="text-[11px] text-blue-400">Precisão Regulamentar 4 Decimais</span>
+        </div>
+
+<pre class="leading-relaxed"><code><span class="text-slate-500">// ============================================================================</span>
+<span class="text-slate-500">// Módulo Financeiro CUB - Regras de Domínio em Node.js</span>
+<span class="text-slate-500">// ============================================================================</span>
+
+<span class="text-blue-300 font-semibold">/**</span>
+<span class="text-blue-300 font-semibold"> * Converte um valor monetário (R$) para cotas imutáveis de CUB.</span>
+<span class="text-blue-300 font-semibold"> * @param {number} valorNominal - Valor em Reais (ex: 550000.00 ou parcela de 13750.00)</span>
+<span class="text-blue-300 font-semibold"> * @param {number} cubBaseValor - CUB do mês de assinatura (ex: 2750.52)</span>
+<span class="text-blue-300 font-semibold"> * @returns {number} Cotas fixadas com 4 casas decimais</span>
+<span class="text-blue-300 font-semibold"> */</span>
+<span class="text-rose-400 font-bold">export function</span> <span class="text-white font-bold">calcularCotaCUB</span>(valorNominal: <span class="text-blue-400">number</span>, cubBaseValor: <span class="text-blue-400">number</span>): <span class="text-blue-400">number</span> {
+  <span class="text-rose-400 font-bold">if</span> (!cubBaseValor || cubBaseValor &lt;= <span class="text-amber-300">0</span>) {
+    <span class="text-rose-400 font-bold">return</span> <span class="text-amber-300">0</span>;
+  }
+  <span class="text-rose-400 font-bold">const</span> cota = valorNominal / cubBaseValor;
+  <span class="text-slate-500">// Math.round garante ausência de desvios IEEE-754 em frações monetárias</span>
+  <span class="text-rose-400 font-bold">return</span> Math.<span class="text-white">round</span>(cota * <span class="text-amber-300">10000</span>) / <span class="text-amber-300">10000</span>;
+}
+
+<span class="text-blue-300 font-semibold">/**</span>
+<span class="text-blue-300 font-semibold"> * Calcula o valor atualizado do boleto/cobrança no mês de vencimento.</span>
+<span class="text-blue-300 font-semibold"> * @param {number} cotaCUB - Cotas da parcela armazenadas no banco (ex: 4.9991)</span>
+<span class="text-blue-300 font-semibold"> * @param {number} cubVigente - CUB oficial publicado para o mês (ex: 3171.96)</span>
+<span class="text-blue-300 font-semibold"> * @returns {number} Valor final em Reais para faturamento (2 decimais)</span>
+<span class="text-blue-300 font-semibold"> */</span>
+<span class="text-rose-400 font-bold">export function</span> <span class="text-white font-bold">atualizarParcela</span>(cotaCUB: <span class="text-blue-400">number</span>, cubVigente: <span class="text-blue-400">number</span>): <span class="text-blue-400">number</span> {
+  <span class="text-rose-400 font-bold">const</span> valor = cotaCUB * cubVigente;
+  <span class="text-rose-400 font-bold">return</span> Math.<span class="text-white">round</span>(valor * <span class="text-amber-300">100</span>) / <span class="text-amber-300">100</span>;
+}
+
+<span class="text-blue-300 font-semibold">/**</span>
+<span class="text-blue-300 font-semibold"> * Exemplo de Controller / Rota em Node.js (Express / Fastify)</span>
+<span class="text-blue-300 font-semibold"> */</span>
+<span class="text-rose-400 font-bold">export async function</span> <span class="text-white font-bold">faturarParcelaHandler</span>(req: <span class="text-blue-400">any</span>, res: <span class="text-blue-400">any</span>) {
+  <span class="text-rose-400 font-bold">const</span> { parcelaId } = req.params;
+
+  <span class="text-slate-500">// 1. Busca a parcela no banco de dados</span>
+  <span class="text-rose-400 font-bold">const</span> parcela = <span class="text-rose-400 font-bold">await</span> db.parcelas.findUnique({ where: { id: parcelaId } });
+  
+  <span class="text-slate-500">// 2. Obtém o CUB divulgado pelo Sinduscon para a competência do faturamento</span>
+  <span class="text-rose-400 font-bold">const</span> cubAtual = <span class="text-rose-400 font-bold">await</span> db.cubHistorico.findFirst({ orderBy: { anoMes: <span class="text-emerald-300">'desc'</span> } });
+
+  <span class="text-slate-500">// 3. Aplica a equivalência matemática canônica</span>
+  <span class="text-rose-400 font-bold">const</span> valorAtualizado = <span class="text-white">atualizarParcela</span>(parcela.cotaCUB, cubAtual.valor);
+
+  <span class="text-rose-400 font-bold">return</span> res.json({
+    parcelaId,
+    cotaCUB: parcela.cotaCUB,         <span class="text-blue-400">// ex: 4.9991 CUBs</span>
+    cubAplicado: cubAtual.valor,      <span class="text-blue-400">// ex: R$ 3.171,96</span>
+    valorBoletoReais: valorAtualizado <span class="text-rose-400">// ex: R$ 15.856,94</span>
+  });
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- 04. PLAYGROUND INTERATIVO EM TONS DE AZUL E ROSA -->
+    <section id="playground" class="space-y-6 pt-4">
+      <div class="border-b border-slate-200 pb-4">
+        <span class="text-xs font-mono uppercase tracking-widest text-blue-600 font-semibold">04. Playground Interativo</span>
+        <h2 class="text-2xl font-bold font-mono text-slate-900 mt-1">Simulador em Tempo Real (Validação da Lógica Node.js)</h2>
+        <p class="text-xs text-slate-500 mt-1">
+          Altere os campos para simular o comportamento exato que a API Node.js executará. O cenário de <strong class="text-slate-900">R$ 550.000,00 com CUB 08/2023</strong> já vem preenchido por padrão.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <!-- Formulário Fundo Branco com Acentos Azul e Rosa -->
+        <div class="lg:col-span-5 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xl shadow-slate-200/50">
+          <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+            <span class="text-xs font-mono uppercase tracking-wider text-slate-900 font-bold">Parâmetros da Proposta</span>
+            <span class="text-[10px] font-mono border border-blue-200 bg-blue-50 px-2.5 py-0.5 rounded-full text-blue-700 font-semibold">Live Sync</span>
+          </div>
+
+          <form id="form-simulacao"
+                hx-post="/api/calcular"
+                hx-trigger="input changed delay:200ms, change"
+                hx-target="#painel-resumo"
+                hx-swap="outerHTML"
+                autocomplete="off"
+                class="space-y-4 font-mono text-xs">
+
+            <!-- Título -->
+            <div>
+              <label for="titulo" class="block text-slate-700 font-semibold mb-1">Título do Cenário</label>
+              <input type="text" 
+                     id="titulo" 
+                     name="titulo" 
+                     value="{{ .Input.Titulo }}" 
+                     class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all">
+            </div>
+
+            <!-- CUB-Base -->
+            <div>
+              <label for="cub_base" class="block text-slate-700 font-semibold mb-1">CUB-Base Contratual</label>
+              <select id="cub_base" 
+                      name="cub_base" 
+                      class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all cursor-pointer">
+                {{ range .CUBHistorico }}
+                  <option value="{{ .AnoMes }}" {{ if eq $.Input.CUBBase .AnoMes }}selected{{ end }}>
+                    {{ .MesAno }} — {{ .ValorFormatado }}
+                  </option>
+                {{ end }}
+              </select>
+              <div class="mt-1.5 flex justify-between text-[11px] text-slate-500">
+                <span>CUB Atual ({{ .CUBMaisRecente.MesAno }}): <strong class="text-slate-800">{{ .CUBMaisRecente.ValorFormatado }}</strong></span>
+              </div>
+            </div>
+
+            <!-- Valores: Sinal & Entrada -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="valor_sinal" class="block text-slate-700 font-semibold mb-1">Sinal (R$)</label>
+                <input type="number" 
+                       step="any"
+                       id="valor_sinal" 
+                       name="valor_sinal" 
+                       value="{{ if gt .Input.ValorSinal 0.0 }}{{ .Input.ValorSinal }}{{ end }}" 
+                       class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-bold focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all">
+              </div>
+              <div>
+                <label for="valor_entrada" class="block text-slate-700 font-semibold mb-1">Entrada (R$)</label>
+                <input type="number" 
+                       step="any"
+                       id="valor_entrada" 
+                       name="valor_entrada" 
+                       value="{{ if gt .Input.ValorEntrada 0.0 }}{{ .Input.ValorEntrada }}{{ end }}" 
+                       class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-bold focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all">
+              </div>
+            </div>
+
+            <!-- Parcelas -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="tipo_parcela" class="block text-slate-700 font-semibold mb-1">Periodicidade</label>
+                <select id="tipo_parcela" 
+                        name="tipo_parcela" 
+                        class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all cursor-pointer">
+                  <option value="mensal" {{ if eq .Input.TipoParcela "mensal" }}selected{{ end }}>Mensal</option>
+                  <option value="trimestral" {{ if eq .Input.TipoParcela "trimestral" }}selected{{ end }}>Trimestral</option>
+                  <option value="semestral" {{ if eq .Input.TipoParcela "semestral" }}selected{{ end }}>Semestral</option>
+                  <option value="anual" {{ if eq .Input.TipoParcela "anual" }}selected{{ end }}>Anual</option>
+                </select>
+              </div>
+              <div>
+                <label for="qtd_parcelas" class="block text-slate-700 font-semibold mb-1">Qtd. Parcelas</label>
+                <input type="number" 
+                       id="qtd_parcelas" 
+                       name="qtd_parcelas" 
+                       min="1" 
+                       max="360" 
+                       value="{{ .Input.QtdParcelas }}" 
+                       class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-bold focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all">
+              </div>
+            </div>
+
+            <!-- Vencimento & Valor Parcela -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="primeiro_vencimento" class="block text-slate-700 font-semibold mb-1">1º Vencimento</label>
+                <input type="date" 
+                       id="primeiro_vencimento" 
+                       name="primeiro_vencimento" 
+                       value="{{ .Input.PrimeiroVencimento }}" 
+                       class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all">
+              </div>
+              <div>
+                <label for="valor_parcela" class="block text-slate-700 font-semibold mb-1">Valor Parcela (R$)</label>
+                <input type="number" 
+                       step="any"
+                       id="valor_parcela" 
+                       name="valor_parcela" 
+                       value="{{ if gt .Input.ValorParcela 0.0 }}{{ .Input.ValorParcela }}{{ end }}" 
+                       class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-bold focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all">
+              </div>
+            </div>
+
+            <!-- Chaves -->
+            <div>
+              <label for="valor_chaves" class="block text-slate-700 font-semibold mb-1">Chaves (R$)</label>
+              <input type="number" 
+                     step="any"
+                     id="valor_chaves" 
+                     name="valor_chaves" 
+                     value="{{ if gt .Input.ValorChaves 0.0 }}{{ .Input.ValorChaves }}{{ end }}" 
+                     class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-bold focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all">
+            </div>
+
+            <!-- Botão Salvar Proposta (Azul & Rosa) -->
+            <div class="pt-2">
+              <button type="button"
+                      hx-post="/api/propostas"
+                      hx-include="#form-simulacao"
+                      hx-target="#lista-propostas-salvas"
+                      hx-swap="outerHTML"
+                      class="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs bg-gradient-to-r from-blue-600 via-indigo-600 to-rose-500 hover:from-blue-700 hover:to-rose-600 text-white shadow-lg shadow-rose-500/20 border border-rose-300/40 transition-all cursor-pointer">
+                Salvar Simulação no Banco Local
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Coluna da Direita: Card de Resumo Financeiro da Proposta -->
+        <div class="lg:col-span-7">
+          <div id="painel-resumo">
+            {{ template "summary.html" . }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Área do Cronograma Sozinha no Meio da Página (100% de Largura, Centralizada, Sem Quebras) -->
+      <div id="painel-cronograma" class="w-full">
+        {{ template "schedule.html" . }}
+      </div>
+
+      <!-- Cenários & Propostas Salvas (Largura Total na Parte Inferior) -->
+      <div class="w-full">
+        {{ template "proposals.html" .Propostas }}
+      </div>
+    </section>
+
+    <!-- 05. EDGE CASES & REGRAS CRÍTICAS NO BACKEND NODE.JS -->
+    <section id="edge-cases" class="p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-xl shadow-slate-200/50 space-y-6">
+      <div class="border-b border-slate-100 pb-4">
+        <span class="text-xs font-mono uppercase tracking-widest text-rose-600 font-semibold">05. Cuidados no Backend Node.js</span>
+        <h2 class="text-2xl font-bold font-mono text-slate-900 mt-1">Edge Cases & Gotchas Críticos em JavaScript</h2>
+        <p class="text-xs text-slate-500 mt-1">Armadilhas frequentes de ponto flutuante e regras contratuais.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono text-xs">
+        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 shadow-sm">
+          <div class="font-bold text-slate-900 uppercase text-[11px] pb-1 border-b border-slate-200 flex items-center gap-1.5">
+            <span class="text-rose-600 font-extrabold">01.</span> Ponto Flutuante (IEEE 754)
+          </div>
+          <p class="text-slate-600 font-sans leading-relaxed">
+            Em JavaScript, <code class="text-rose-600 font-semibold">0.1 + 0.2 !== 0.3</code>. Nunca divida e multiplique repetidas vezes em memória sem arredondar. Use <code class="text-blue-700 font-semibold">Math.round(cota * 10000) / 10000</code> ou bibliotecas de precisão como <code class="text-indigo-600">decimal.js</code> para grandes volumes.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 shadow-sm">
+          <div class="font-bold text-slate-900 uppercase text-[11px] pb-1 border-b border-slate-200 flex items-center gap-1.5">
+            <span class="text-rose-600 font-extrabold">02.</span> Cláusula de Não-Deflação
+          </div>
+          <p class="text-slate-600 font-sans leading-relaxed">
+            Se o CUB divulgado em um mês apresentar deflação (queda), contratos imobiliários padrão proíbem a redução do saldo nominal. Implemente: <code class="text-blue-700 font-semibold">Math.max(cubAtual, cubBase)</code> no seu service.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 shadow-sm">
+          <div class="font-bold text-slate-900 uppercase text-[11px] pb-1 border-b border-slate-200 flex items-center gap-1.5">
+            <span class="text-rose-600 font-extrabold">03.</span> Competência e Publicação
+          </div>
+          <p class="text-slate-600 font-sans leading-relaxed">
+            O Sinduscon divulga o CUB do mês $M$ até o 5º dia útil do mês $M+1$. Para boletos com vencimento no início do mês, o backend Node deve usar o último CUB efetivamente homologado e disponível em cache.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Toast em Azul e Rosa -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-16 opacity-0 transition-all duration-200 pointer-events-none">
+    <div class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-rose-500 text-white font-mono text-xs font-bold shadow-2xl shadow-rose-500/30 flex items-center gap-2 border border-rose-300">
+      <span>✔</span>
+      <span id="toast-message">Operação concluída.</span>
+    </div>
+  </div>
+
+  <footer class="border-t border-slate-200 py-8 text-center font-mono text-xs text-slate-500 bg-slate-50 mt-12">
+    <p>Documentação Técnica CUB • Engenharia & Arquitetura de Software • Node.js Edition • Tailwind CSS v4</p>
+  </footer>
+
+  <script>
+    document.body.addEventListener('showToast', function(evt) {
+      const msg = evt.detail.value || evt.detail;
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      if (toast && toastMsg && msg) {
+        toastMsg.textContent = msg;
+        toast.classList.remove('translate-y-16', 'opacity-0', 'pointer-events-none');
+        toast.classList.add('translate-y-0', 'opacity-100');
+        setTimeout(() => {
+          toast.classList.add('translate-y-16', 'opacity-0', 'pointer-events-none');
+          toast.classList.remove('translate-y-0', 'opacity-100');
+        }, 3000);
+      }
+    });
+  </script>
+</body>
+</html>

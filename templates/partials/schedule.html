@@ -1,0 +1,50 @@
+<!-- Cronograma Estimado de Pagamentos (Área Dedicada em Largura Total, sem quebras) -->
+<div class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xl shadow-slate-200/50 w-full">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+    <div>
+      <div class="flex items-center gap-2">
+        <h3 class="text-lg font-bold font-mono text-slate-900 uppercase tracking-wider">Cronograma de Cotas e Vencimentos</h3>
+        <span class="text-xs font-mono px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-semibold">Tabela Linear</span>
+      </div>
+      <p class="text-xs text-slate-500 mt-1">Mapeamento linear e analítico de cada cota fixa em CUB multiplicada pelo índice atualizado.</p>
+    </div>
+    <span class="px-3.5 py-1.5 rounded-full border border-rose-200 bg-rose-50 text-xs font-mono text-rose-700 font-semibold shadow-xs">
+      {{ .Resultado.TotalItensCronograma }} eventos de pagamento
+    </span>
+  </div>
+
+  <div class="overflow-x-auto rounded-xl border border-slate-200/90 shadow-xs">
+    <table class="w-full min-w-full text-left text-xs font-mono text-slate-700 whitespace-nowrap" style="white-space: nowrap;">
+      <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 uppercase text-[11px] tracking-wider">
+        <tr>
+          <th class="py-3.5 px-4 whitespace-nowrap">Item / Evento</th>
+          <th class="py-3.5 px-4 whitespace-nowrap">Vencimento</th>
+          <th class="py-3.5 px-4 whitespace-nowrap">Periodicidade</th>
+          <th class="py-3.5 px-4 text-right whitespace-nowrap">Valor Base (R$)</th>
+          <th class="py-3.5 px-4 text-right whitespace-nowrap text-blue-700">Cota Fixa (CUB)</th>
+          <th class="py-3.5 px-4 text-right whitespace-nowrap text-rose-600 font-bold">Valor no CUB Vigente (R$)</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 text-xs">
+        {{ if .Resultado.Cronograma }}
+          {{ range .Resultado.Cronograma }}
+          <tr class="hover:bg-blue-50/50 transition-colors whitespace-nowrap">
+            <td class="py-3 px-4 text-slate-900 font-semibold whitespace-nowrap">{{ .Descricao }}</td>
+            <td class="py-3 px-4 text-slate-500 whitespace-nowrap">{{ .Vencimento }}</td>
+            <td class="py-3 px-4 text-slate-500 whitespace-nowrap">{{ .Periodicidade }}</td>
+            <td class="py-3 px-4 text-right text-slate-700 whitespace-nowrap">{{ .ValorFormatado }}</td>
+            <td class="py-3 px-4 text-right text-blue-700 font-bold whitespace-nowrap">{{ .EquivCUBFormatado }}</td>
+            <td class="py-3 px-4 text-right text-rose-600 font-bold bg-rose-50/50 whitespace-nowrap">{{ .ValorCUBAtualFormatado }}</td>
+          </tr>
+          {{ end }}
+        {{ else }}
+          <tr>
+            <td colspan="6" class="py-10 text-center text-slate-400 italic">
+              Nenhum valor informado para compor o cronograma.
+            </td>
+          </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+</div>

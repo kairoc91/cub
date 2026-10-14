@@ -1,0 +1,49 @@
+# Binários compilados e artefatos Go
+/bin/
+/main
+/cub-app
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Arquivos temporários e logs
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+
+# Variáveis de ambiente e segredos
+.env
+*.env
+.env.*
+
+# Dependências e caches Node.js / Tailwind
+node_modules/
+.npm/
+.pnpm-store/
+
+# Dados locais e de persistência do runtime
+data/*.json
+!data/.gitkeep
+
+# Arquivos de IDEs e editores
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.gemini/
+
+# Arquivos de sistema operacional (macOS, Windows, Linux)
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini

@@ -1,0 +1,7 @@
+<div id="painel-resumo">
+  {{ template "summary.html" . }}
+</div>
+
+<div id="painel-cronograma" hx-swap-oob="outerHTML" class="w-full">
+  {{ template "schedule.html" . }}
+</div>

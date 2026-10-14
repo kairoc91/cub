@@ -1,0 +1,108 @@
+<!-- Card de Resumo Financeiro da Proposta (Total Geral & Métricas) -->
+<div class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xl shadow-slate-200/50 relative">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-6">
+    <div>
+      <div class="text-[11px] font-mono tracking-widest uppercase text-slate-500 font-semibold">Total do Contrato (Base R$)</div>
+      <div class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 mt-1 font-mono">
+        {{ if .Resultado.TemValores }}{{ .Resultado.TotalGeralFormatado }}{{ else }}R$ 0,00{{ end }}
+      </div>
+      <div class="mt-2.5 inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-200 bg-blue-50 text-xs font-mono text-blue-700">
+        <span class="text-blue-500 font-medium">Equivalência:</span>
+        <span class="font-bold underline decoration-blue-400 text-blue-800">{{ if .Resultado.TemValores }}{{ .Resultado.TotalCUBsFormatado }}{{ else }}0,0000{{ end }} CUBs</span>
+        <span class="text-blue-600/70 text-[11px]">(Base: {{ .Resultado.CUBBaseMesAno }} @ {{ .Resultado.CUBBaseFormatado }})</span>
+      </div>
+    </div>
+    <div class="text-right">
+      <div class="text-[11px] font-mono tracking-widest uppercase text-rose-600 font-semibold">Valor Projetado (CUB Atual {{ .Resultado.CUBAtualMesAno }})</div>
+      <div class="text-xl sm:text-2xl font-bold font-mono text-rose-600 mt-1">
+        {{ if .Resultado.TemValores }}
+          {{ .Resultado.TotalProjetadoAtualFormatado }}
+        {{ else }}
+          R$ 0,00
+        {{ end }}
+      </div>
+      <div class="text-[11px] font-mono text-slate-400 mt-0.5">
+        Índice Vigente: {{ .Resultado.CUBAtualFormatado }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Mini Cards Grid em Tons de Azul e Rosa -->
+  <div class="grid grid-cols-2 gap-3 mt-6">
+    <!-- Sinal -->
+    <div class="p-4 rounded-xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 transition-colors">
+      <div class="flex items-center justify-between text-xs font-mono text-slate-600">
+        <span class="font-semibold text-blue-600">01. SINAL</span>
+        <span class="text-[10px] border border-blue-200 bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-bold">{{ .Resultado.Sinal.PercentualFormatado }}</span>
+      </div>
+      <div class="text-base sm:text-lg font-bold font-mono text-slate-900 mt-2">
+        {{ if .Resultado.TemValores }}{{ .Resultado.Sinal.ValorFormatado }}{{ else }}R$ 0,00{{ end }}
+      </div>
+      <div class="text-xs font-mono text-slate-600 mt-1 pt-2 border-t border-slate-200/60 flex justify-between">
+        <span class="text-slate-400">Cotas CUB:</span>
+        <span class="font-bold text-blue-700">{{ if .Resultado.TemValores }}{{ .Resultado.Sinal.EquivCUBFormatado }}{{ else }}0,0000{{ end }}</span>
+      </div>
+    </div>
+
+    <!-- Entrada -->
+    <div class="p-4 rounded-xl bg-slate-50/80 border border-slate-200 hover:border-sky-300 transition-colors">
+      <div class="flex items-center justify-between text-xs font-mono text-slate-600">
+        <span class="font-semibold text-sky-600">02. ENTRADA</span>
+        <span class="text-[10px] border border-sky-200 bg-sky-50 text-sky-700 px-1.5 py-0.5 rounded font-bold">{{ .Resultado.Entrada.PercentualFormatado }}</span>
+      </div>
+      <div class="text-base sm:text-lg font-bold font-mono text-slate-900 mt-2">
+        {{ if .Resultado.TemValores }}{{ .Resultado.Entrada.ValorFormatado }}{{ else }}R$ 0,00{{ end }}
+      </div>
+      <div class="text-xs font-mono text-slate-600 mt-1 pt-2 border-t border-slate-200/60 flex justify-between">
+        <span class="text-slate-400">Cotas CUB:</span>
+        <span class="font-bold text-sky-700">{{ if .Resultado.TemValores }}{{ .Resultado.Entrada.EquivCUBFormatado }}{{ else }}0,0000{{ end }}</span>
+      </div>
+    </div>
+
+    <!-- Parcelas -->
+    <div class="p-4 rounded-xl bg-slate-50/80 border border-slate-200 hover:border-rose-300 transition-colors">
+      <div class="flex items-center justify-between text-xs font-mono text-slate-600">
+        <span class="font-semibold text-rose-600">03. PARCELAS</span>
+        <span class="text-[10px] border border-rose-200 bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded font-bold">{{ .Resultado.Parcelas.PercentualFormatado }}</span>
+      </div>
+      <div class="text-base sm:text-lg font-bold font-mono text-slate-900 mt-2">
+        {{ if .Resultado.TemValores }}{{ .Resultado.Parcelas.ValorFormatado }}{{ else }}R$ 0,00{{ end }}
+      </div>
+      <div class="text-xs font-mono text-slate-600 mt-1 pt-2 border-t border-slate-200/60 flex justify-between">
+        <span class="text-slate-400">Cotas CUB:</span>
+        <span class="font-bold text-rose-700">{{ if .Resultado.TemValores }}{{ .Resultado.Parcelas.EquivCUBFormatado }}{{ else }}0,0000{{ end }}</span>
+      </div>
+    </div>
+
+    <!-- Chaves -->
+    <div class="p-4 rounded-xl bg-slate-50/80 border border-slate-200 hover:border-pink-300 transition-colors">
+      <div class="flex items-center justify-between text-xs font-mono text-slate-600">
+        <span class="font-semibold text-pink-600">04. CHAVES</span>
+        <span class="text-[10px] border border-pink-200 bg-pink-50 text-pink-700 px-1.5 py-0.5 rounded font-bold">{{ .Resultado.Chaves.PercentualFormatado }}</span>
+      </div>
+      <div class="text-base sm:text-lg font-bold font-mono text-slate-900 mt-2">
+        {{ if .Resultado.TemValores }}{{ .Resultado.Chaves.ValorFormatado }}{{ else }}R$ 0,00{{ end }}
+      </div>
+      <div class="text-xs font-mono text-slate-600 mt-1 pt-2 border-t border-slate-200/60 flex justify-between">
+        <span class="text-slate-400">Cotas CUB:</span>
+        <span class="font-bold text-pink-700">{{ if .Resultado.TemValores }}{{ .Resultado.Chaves.EquivCUBFormatado }}{{ else }}0,0000{{ end }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de Distribuição (Azul e Rosa) -->
+  <div class="mt-6 pt-5 border-t border-slate-100">
+    <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
+      <div class="h-full bg-blue-600 transition-all duration-200" style="width: {{ .Resultado.PctSinal }}%" title="Sinal: {{ .Resultado.Sinal.PercentualFormatado }}"></div>
+      <div class="h-full bg-sky-400 transition-all duration-200" style="width: {{ .Resultado.PctEntrada }}%" title="Entrada: {{ .Resultado.Entrada.PercentualFormatado }}"></div>
+      <div class="h-full bg-rose-500 transition-all duration-200" style="width: {{ .Resultado.PctParcelas }}%" title="Parcelas: {{ .Resultado.Parcelas.PercentualFormatado }}"></div>
+      <div class="h-full bg-pink-600 transition-all duration-200" style="width: {{ .Resultado.PctChaves }}%" title="Chaves: {{ .Resultado.Chaves.PercentualFormatado }}"></div>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-slate-600 mt-2.5 px-0.5">
+      <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-blue-600 rounded-full"></span> Sinal (Azul)</div>
+      <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-sky-400 rounded-full"></span> Entrada (Celeste)</div>
+      <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-rose-500 rounded-full"></span> Parcelas (Rosa)</div>
+      <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-pink-600 rounded-full"></span> Chaves (Pink)</div>
+    </div>
+  </div>
+</div>

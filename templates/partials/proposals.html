@@ -1,0 +1,61 @@
+<div id="lista-propostas-salvas" class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xl shadow-slate-200/50">
+  <div class="flex justify-between items-center pb-4 mb-4 border-b border-slate-100">
+    <div>
+      <h3 class="text-sm font-bold font-mono text-slate-900 uppercase tracking-wider">Cenários & Propostas Salvas</h3>
+      <p class="text-xs text-slate-500 mt-0.5">Persistência local no servidor Go (JSON thread-safe).</p>
+    </div>
+    {{ if . }}
+    <button type="button" 
+            hx-delete="/api/propostas" 
+            hx-target="#lista-propostas-salvas" 
+            hx-swap="outerHTML"
+            hx-confirm="Deseja remover todas as propostas salvas no servidor?"
+            class="text-xs font-mono text-rose-600 hover:text-rose-700 underline transition-colors cursor-pointer font-semibold">
+      Limpar Registros
+    </button>
+    {{ end }}
+  </div>
+
+  <div class="space-y-3">
+    {{ if . }}
+      {{ range . }}
+      <div class="p-4 rounded-xl bg-slate-50/80 border border-slate-200 hover:border-blue-300 hover:bg-blue-50/20 transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-slate-900 text-xs sm:text-sm font-mono">{{ .Input.Titulo }}</span>
+            <span class="text-[10px] font-mono text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200 font-medium">
+              {{ .CriadaEmFormatada }}
+            </span>
+          </div>
+          <div class="flex flex-wrap items-center gap-3 text-xs font-mono text-slate-600">
+            <span class="text-slate-900 font-bold">{{ .Resultado.TotalGeralFormatado }}</span>
+            <span class="text-slate-300">/</span>
+            <span class="text-blue-700 font-semibold underline">{{ .Resultado.TotalCUBsFormatado }} CUBs</span>
+            <span class="text-slate-300">/</span>
+            <span>{{ .Input.QtdParcelas }} parcelas {{ .Input.TipoParcela }}</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 self-end sm:self-center">
+          <a href="/api/propostas/{{ .ID }}/carregar"
+             class="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm shadow-blue-500/20">
+            Carregar
+          </a>
+          <button type="button" 
+                  hx-delete="/api/propostas/{{ .ID }}" 
+                  hx-target="#lista-propostas-salvas" 
+                  hx-swap="outerHTML"
+                  hx-confirm="Excluir proposta?"
+                  class="px-2 py-1.5 rounded-lg text-xs font-mono text-slate-400 hover:text-rose-600 border border-transparent hover:border-rose-200 hover:bg-rose-50 transition-all cursor-pointer">
+            ✕
+          </button>
+        </div>
+      </div>
+      {{ end }}
+    {{ else }}
+      <div class="py-6 text-center text-slate-400 font-mono text-xs">
+        Nenhum cenário salvo ainda. Use o botão "Salvar Simulação" para registrar testes.
+      </div>
+    {{ end }}
+  </div>
+</div>
