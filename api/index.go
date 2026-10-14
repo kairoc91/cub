@@ -52,9 +52,22 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Restaura o path original da URL quando reescrito pelo Vercel
-	if matchedPath := r.Header.Get("x-matched-path"); matchedPath != "" {
-		r.URL.Path = matchedPath
+	// 1. Tenta recuperar o path original passado pelo rewrite do vercel.json
+	if p := r.URL.Query().Get("__path"); p != "" {
+		if !strings.HasPrefix(p, "/") {
+			p = "/" + p
+		}
+		r.URL.Path = p
+	} else if matchedPath := r.Header.Get("x-matched-path"); matchedPath != "" {
+		// 2. Fallback para header de rewrite
+		if matchedPath != "/api/index" && matchedPath != "/api" {
+			r.URL.Path = matchedPath
+		}
+	}
+
+	// Normaliza rotas que apontem diretamente para o bundle da função
+	if r.URL.Path == "/api/index" || r.URL.Path == "/api" || r.URL.Path == "" {
+		r.URL.Path = "/"
 	}
 
 	appMux.ServeHTTP(w, r)

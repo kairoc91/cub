@@ -82,6 +82,7 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 
 	// Rota Principal (SSR)
 	mux.HandleFunc("GET /{$}", s.handleIndex)
+	mux.HandleFunc("GET /api/index", s.handleIndex)
 
 	// Rotas da API / HTMX
 	mux.HandleFunc("POST /api/calcular", s.handleCalcular)
