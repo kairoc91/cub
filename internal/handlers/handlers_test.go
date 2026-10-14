@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -8,8 +9,10 @@ import (
 	"strings"
 	"testing"
 
+	appAssets "cub"
 	"cub/internal/calculator"
 	"cub/internal/cub"
+	"cub/internal/models"
 	"cub/internal/storage"
 )
 
@@ -59,6 +62,29 @@ func TestHandlers_Index(t *testing.T) {
 	if !strings.Contains(body, "10/2026") {
 		t.Errorf("CUB mais recente não exibido no HTML")
 	}
+}
+
+func TestEmbeddedTemplates(t *testing.T) {
+	tmpl, err := template.ParseFS(appAssets.TemplatesFS, "templates/*.html", "templates/partials/*.html")
+	if err != nil {
+		t.Fatalf("ParseFS error: %v", err)
+	}
+	for _, tpl := range tmpl.Templates() {
+		t.Logf("template name: %q", tpl.Name())
+	}
+	data := models.PageData{
+		Input: models.SimulacaoInput{
+			ValorSinal:   55000,
+			ValorEntrada: 110000,
+			ValorParcela: 13750,
+			ValorChaves:  55000,
+		},
+	}
+	var buf strings.Builder
+	if err := tmpl.ExecuteTemplate(&buf, "index.html", data); err != nil {
+		t.Fatalf("ExecuteTemplate error: %v", err)
+	}
+	t.Logf("Rendered %d bytes", buf.Len())
 }
 
 func TestHandlers_Calcular(t *testing.T) {

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"path"
 	"strings"
 	"sync"
 
@@ -53,21 +54,28 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 1. Tenta recuperar o path original passado pelo rewrite do vercel.json
-	if p := r.URL.Query().Get("__path"); p != "" {
-		if !strings.HasPrefix(p, "/") {
-			p = "/" + p
-		}
-		r.URL.Path = p
-	} else if matchedPath := r.Header.Get("x-matched-path"); matchedPath != "" {
-		// 2. Fallback para header de rewrite
-		if matchedPath != "/api/index" && matchedPath != "/api" {
-			r.URL.Path = matchedPath
-		}
+	reqPath := r.URL.Query().Get("__path")
+	if reqPath == "" {
+		reqPath = r.Header.Get("x-matched-path")
+	}
+	if reqPath == "" {
+		reqPath = r.URL.Path
 	}
 
-	// Normaliza rotas que apontem diretamente para o bundle da função
-	if r.URL.Path == "/api/index" || r.URL.Path == "/api" || r.URL.Path == "" {
-		r.URL.Path = "/"
+	// Limpa e normaliza o path (evita //, ., /api/index, caminhos relativos)
+	cleaned := path.Clean("/" + strings.TrimPrefix(reqPath, "/"))
+	if cleaned == "/api/index" || cleaned == "/api" || cleaned == "." || cleaned == "" {
+		cleaned = "/"
+	}
+	r.URL.Path = cleaned
+
+	// Remove o parâmetro interno __path para não poluir o restante da aplicação
+	if r.URL.RawQuery != "" {
+		q := r.URL.Query()
+		if q.Has("__path") {
+			q.Del("__path")
+			r.URL.RawQuery = q.Encode()
+		}
 	}
 
 	appMux.ServeHTTP(w, r)

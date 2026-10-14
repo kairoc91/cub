@@ -78,10 +78,15 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	} else {
 		staticFS = http.FS(appAssets.StaticFS)
 	}
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(staticFS)))
+	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(staticFS)))
 
-	// Rota Principal (SSR)
-	mux.HandleFunc("GET /{$}", s.handleIndex)
+	// Favicon rápido (evita renderizar index no favicon)
+	mux.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	// Rota Principal (SSR) - catch-all GET / para garantir que / e variações renderizem a home
+	mux.HandleFunc("GET /", s.handleIndex)
 	mux.HandleFunc("GET /api/index", s.handleIndex)
 
 	// Rotas da API / HTMX
