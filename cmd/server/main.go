@@ -20,13 +20,19 @@ import (
 )
 
 func main() {
-	port := flag.String("port", "8080", "Porta HTTP do servidor")
+	// Prioriza variável de ambiente PORT (usada pela Vercel e serviços Cloud/VPS)
+	defaultPort := os.Getenv("PORT")
+	if defaultPort == "" {
+		defaultPort = "8080"
+	}
+
+	port := flag.String("port", defaultPort, "Porta HTTP do servidor")
 	csvPath := flag.String("csv", "cub_historico.csv", "Caminho do arquivo CSV com histórico do CUB")
 	storagePath := flag.String("storage", "data/propostas.json", "Caminho do arquivo de persistência de propostas")
 	staticDir := flag.String("static", "static", "Diretório de arquivos estáticos")
 	flag.Parse()
 
-	log.Println("🚀 Iniciando Simulador CUB (Go + HTMX + Tailwind v4)...")
+	log.Printf("🚀 Iniciando Simulador CUB (Go + HTMX + Tailwind v4) na porta %s...", *port)
 
 	// 1. Repositório CUB (disco ou embutido)
 	inicioCUB := time.Now()
@@ -79,7 +85,7 @@ func main() {
 	signal.Notify(parada, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-		fmt.Printf("\n✨ Servidor rodando com sucesso em http://localhost:%s\n\n", *port)
+		fmt.Printf("\n✨ Servidor rodando com sucesso na porta %s\n\n", *port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("❌ Erro fatal no servidor HTTP: %v", err)
 		}
